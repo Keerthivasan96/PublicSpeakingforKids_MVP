@@ -1,0 +1,383 @@
+/* ========================================================================== 
+   KID-SCHOOL-LEARNING THEME 2025 — SUPER FRIENDLY EDITION
+   Adapted to Speaking Avatar — MVP
+   🔥 FIXED VERSION - UI NO LONGER GETS CUT OFF
+   ========================================================================== */
+
+/* ----------------------
+   THEME VARIABLES — HAPPY & ACCESSIBLE
+   ---------------------- */
+:root {
+  --bg-start: #87CEEB;
+  --bg-end:   #98FB98;
+
+  --glass: rgba(255, 255, 255, 0.92);
+  --glass-2: rgba(255, 255, 255, 0.96);
+  --panel-bg: rgba(255, 255, 255, 0.95);
+
+  --accent: #FF6B6B;
+  --blue:   #4DABF7;
+  --green:  #51CF66;
+  --yellow: #FFD43B;
+  --purple: #DA77F2;
+  --pink:   #FFA8E2;
+
+  --text: #212529;
+  --text-light: #495057;
+  --muted: #868e96;
+
+  --user-bubble: rgba(77, 171, 247, 0.25);
+  --ai-bubble:   rgba(255, 107, 107, 0.20);
+
+  --border: rgba(0, 0, 0, 0.08);
+  --shadow: 0 12px 32px rgba(0,0,0,0.12);
+
+  --panel-radius: 28px;
+  --gap: 24px;
+  --frame-width: 1100px;
+  --right-panel-max-offset: 100px;
+}
+
+/* ----------------------
+   GLOBAL
+   ---------------------- */
+* { box-sizing: border-box; }
+
+/* 🔥 FIX 1: Changed from height: 100% to min-height: 100vh */
+html, body { 
+  min-height: 100vh; 
+  overflow-x: hidden; 
+}
+
+/* 🔥 FIX 2: Changed align-items from center to flex-start */
+body {
+  margin: 0;
+  font-family: 'Poppins', 'Comic Neue', system-ui, sans-serif;
+  background: linear-gradient(135deg, var(--bg-start), var(--bg-end));
+  color: var(--text);
+  display: flex;
+  align-items: flex-start;  /* 🔥 WAS: center - THIS CAUSED THE CUTOFF */
+  justify-content: center;
+  padding: 32px 16px;
+  min-height: 100vh;  /* 🔥 ADDED */
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ----------------------
+   LAYOUT
+   ---------------------- */
+.frame {
+  width: var(--frame-width);
+  max-width: 100%;
+  display: flex;
+  gap: var(--gap);
+  align-items: stretch;
+  margin: 0 auto;  /* 🔥 ADDED: ensures horizontal centering */
+}
+
+.panel {
+  background: var(--panel-bg);
+  border-radius: var(--panel-radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  border: 3px solid rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+}
+
+/* Left column */
+.left {
+  width: 660px;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+/* ========================================================================== 
+   CANVAS CONTAINER — FIXED VERSION (NO SCROLL FREEZE)
+   ========================================================================== */
+#canvas-container {
+  width: 100%;
+  height: 520px;
+  max-height: 520px;
+  min-height: 420px;
+
+  border-radius: 18px;
+
+  /* 🔥 CRITICAL FIX */
+  overflow: visible !important;
+
+  position: relative;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.01));
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.03);
+  margin: 10px 24px;
+  display: block;
+}
+
+/* Subtle placeholder */
+#canvas-container::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(135deg, rgba(255,255,255,0.02), rgba(0,0,0,0.01));
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Scroll-safe wrapper (Option C) — receives touch gestures, prevents canvas from stealing scroll boundary */
+#avatar-scroll-safe {
+  position: absolute;
+  inset: 0;                /* fills container */
+  z-index: 2;              /* above canvas so it handles touch gestures */
+  background: transparent;
+  touch-action: pan-y;     /* crucial: allow vertical scrolling gestures */
+  -webkit-overflow-scrolling: touch;
+  pointer-events: auto;    /* wrapper receives pointer/touch events */
+}
+
+/* Canvas MUST NOT block pointer events and should sit visually under the wrapper */
+#canvas-container canvas {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+  z-index: 1;
+  pointer-events: none !important;
+}
+
+/* Rotate handle — must remain above wrapper and clickable */
+.avatar-rotate-handle {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.85);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  z-index: 3;   /* highest clickable layer */
+  user-select: none;
+}
+.avatar-rotate-handle:active { cursor: grabbing; }
+
+/* ========================================================================== 
+   RIGHT PANEL — SCROLL FIX
+   ========================================================================== */
+.panel.right {
+  width: 420px;
+  max-width: 100%;
+  min-width: 320px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  max-height: calc(100vh - var(--right-panel-max-offset));
+
+  /* 🔥 FIX: Right panel can scroll */
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Scroll area */
+.scroll-area {
+  flex: 1 1 auto;
+  overflow-y: auto !important;
+  padding: 12px 8px 12px 0;
+  min-height: 240px;
+  border-radius: 20px;
+  box-sizing: border-box;
+
+  max-height: calc(100vh - 220px);
+}
+
+/* ----------------------
+   BUBBLES
+   ---------------------- */
+.bubble {
+  padding: 16px 20px;
+  border-radius: 24px;
+  margin-bottom: 14px;
+  font-size: 16px;
+  line-height: 1.6;
+  max-width: 92%;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  position: relative;
+  word-break: break-word;
+}
+
+.bubble.user {
+  background: var(--user-bubble);
+  border: 3px solid var(--blue);
+  margin-left: auto;
+  color: var(--text);
+}
+
+.bubble:not(.user) {
+  background: var(--ai-bubble);
+  border: 3px solid var(--accent);
+  margin-right: auto;
+  color: var(--text);
+}
+
+.bubble:not(.user)::before {
+  content: "✨ ";
+  font-size: 18px;
+}
+
+/* ----------------------
+   BUTTONS
+   ---------------------- */
+button {
+  padding: 14px 20px;
+  border: none;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+}
+
+button { background: var(--accent); color: white; }
+button.secondary { background: #f1f3f5; color: var(--text); border: 2px solid #dee2e6; }
+
+button:hover {
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 12px 28px rgba(255, 107, 107, 0.4);
+}
+
+button:active { transform: translateY(0); }
+
+/* Pills */
+.class-btn, .subject-btn {
+  padding: 12px 18px;
+  border-radius: 50px;
+  background: white;
+  border: 3px solid #e0e0e0;
+  font-weight: 700;
+  color: var(--text-light);
+  transition: all 0.2s;
+}
+
+.class-btn.active, .subject-btn.active {
+  background: var(--yellow);
+  border-color: #fcc419;
+  color: #333;
+  transform: scale(1.1);
+}
+
+/* ----------------------
+   SELECTS
+   ---------------------- */
+select {
+  padding: 14px;
+  border-radius: 20px;
+  background: white;
+  border: 3px solid #e0e0e0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* ----------------------
+   REPLY BOXES
+   ---------------------- */
+#reply, #transcript {
+  padding: 20px;
+  border-radius: 24px;
+  background: white;
+  border: 3px solid #e0e0e0;
+  font-size: 16px;
+  min-height: 80px;
+  box-shadow: inset 0 4px 10px rgba(0,0,0,0.05);
+}
+
+#log {
+  color: var(--muted);
+  font-size: 14px;
+  padding: 12px;
+  background: rgba(0,0,0,0.03);
+  border-radius: 16px;
+}
+
+/* ----------------------
+   SCROLLBAR
+   ---------------------- */
+.scroll-area::-webkit-scrollbar,
+.panel.right::-webkit-scrollbar {
+  width: 12px;
+}
+
+.scroll-area::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.05);
+  border-radius: 10px;
+}
+
+.scroll-area::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 10px;
+  border: 3px solid white;
+}
+
+.panel.right::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.12);
+  border-radius: 8px;
+  border: 3px solid white;
+}
+
+/* ----------------------
+   RESPONSIVE
+   ---------------------- */
+@media (max-width: 900px) {
+  .frame { flex-direction: column; padding: 16px; gap: 20px; }
+  .left, .panel.right { width: 100%; }
+  .panel.right { max-height: none; overflow: visible; }
+  .scroll-area { max-height: 400px; }
+
+  #canvas-container {
+    height: 380px;
+    max-height: 380px;
+    min-height: 320px;
+    border-radius: 28px;
+
+    /* Still must remain visible */
+    overflow: visible !important;
+
+    margin: 8px 12px;
+  }
+}
+
+/* ----------------------
+   REDUCED MOTION
+   ---------------------- */
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+/* ----------------------
+   HEADING STYLE
+   ---------------------- */
+h1, .panel.right > h1 {
+  font-family: 'Fredoka One', cursive;
+  color: var(--accent);
+  font-size: 28px;
+  text-align: center;
+  margin: 0 0 16px;
+  text-shadow: 2px 2px 0 rgba(255,107,107,0.2);
+}
+
+/* ----------------------
+   QUICK SELECT WRAPPING
+   ---------------------- */
+#classButtons, #subjectButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
