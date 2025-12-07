@@ -84,3 +84,7 @@ frontend/*.log
 *.crt
 *.pid
 backend/.env
+############################
+# Local reference / temp
+############################
+other_ref/
