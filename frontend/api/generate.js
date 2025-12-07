@@ -11,7 +11,7 @@ export default async function handler(req, res) {
     }
 
     const GEMINI_KEY = process.env.GEMINI_API_KEY;
-    const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+    const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash-exp";
     const GEMINI_AUTH_TYPE = (process.env.GEMINI_AUTH_TYPE || "key").toLowerCase(); // "key" or "bearer"
 
     if (!GEMINI_KEY) {
@@ -24,17 +24,74 @@ export default async function handler(req, res) {
     }
 
     // Map frontend fields -> Gemini/Google GL parameters
+    export default async function handler(req, res) {
+  try {
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Method not allowed" });
+    }
+
+    const GEMINI_KEY = process.env.GEMINI_API_KEY;
+    const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash-exp";
+    const GEMINI_AUTH_TYPE = (process.env.GEMINI_AUTH_TYPE || "key").toLowerCase();
+
+    if (!GEMINI_KEY) {
+      return res.status(500).json({ error: "Missing GEMINI_API_KEY in environment" });
+    }
+
+    const { prompt, temperature, max_tokens } = req.body || {};
+    if (!prompt || typeof prompt !== "string") {
+      return res.status(400).json({ error: "Missing or invalid 'prompt' in request body" });
+    }
+
     const payload = {
-      // Many Google examples accept `prompt: { text: "..." }`
-      prompt: { text: prompt },
-      // optional generation params (only include if provided)
-      ...(typeof temperature === "number" ? { temperature } : {}),
-      ...(typeof max_tokens === "number" ? { maxOutputTokens: max_tokens } : {})
+      contents: [{
+        parts: [{
+          text: prompt
+        }]
+      }],
+      generationConfig: {
+        ...(typeof temperature === "number" ? { temperature } : {}),
+        ...(typeof max_tokens === "number" ? { maxOutputTokens: max_tokens } : {})
+      }
     };
+
+    let url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent`;
+    let headers = { "Content-Type": "application/json" };
+
+    if (GEMINI_AUTH_TYPE === "key") {
+      url += `?key=${encodeURIComponent(GEMINI_KEY)}`;
+    } else {
+      headers["Authorization"] = `Bearer ${GEMINI_KEY}`;
+    }
+
+    const apiResp = await fetch(url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+    });
+
+    const data = await apiResp.json().catch(() => null);
+
+    let reply = null;
+    try { reply = reply || data?.candidates?.[0]?.content?.parts?.[0]?.text; } catch (e) {}
+    
+    if (!reply) {
+      console.warn("Unrecognized Gemini response shape, keys:", Object.keys(data || {}).slice(0,20));
+      console.error("Full response:", JSON.stringify(data));
+      return res.status(200).json({ reply: "Sorry — model returned an unexpected response. Check server logs." });
+    }
+
+    return res.status(200).json({ reply });
+
+  } catch (err) {
+    console.error("Serverless function error:", err);
+    return res.status(500).json({ error: "Server error", message: err.message });
+  }
+}
 
     // Prepare URL + headers depending on auth type
     // Default: API key in query param (common with Google Generative Language REST)
-    let url = `https://generativelanguage.googleapis.com/v1/models/${encodeURIComponent(GEMINI_MODEL)}:generateText`;
+    let url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent`;
     let headers = { "Content-Type": "application/json" };
 
     if (GEMINI_AUTH_TYPE === "key") {
