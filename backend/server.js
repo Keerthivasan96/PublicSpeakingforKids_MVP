@@ -13,19 +13,25 @@ dotenv.config();
 const app = express();
 const PORT = Number(process.env.PORT || 4000);
 
-// ⭐ CLAUDE'S FULL CORS CONFIG — replaces your old minimal one
+/**
+ * ⭐ FULL CORS CONFIG (Option A – Using cors() middleware)
+ * Allows local dev + live frontend.
+ */
 app.use(
   cors({
     origin: [
-      "https://public-speaking-for-kids2.vercel.app",
-      "http://localhost:5173",
-      "http://localhost:3000",
+      "https://public-speaking-for-kids2.vercel.app", // your Vercel frontend
+      "http://localhost:5173", // local Vite dev
+      "http://localhost:3000", // optional local fallback
     ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
+// Ensure Express handles OPTIONS automatically for preflight
+app.options("*", cors());
 
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
@@ -93,6 +99,7 @@ app.post("/api/chat", async (req, res) => {
       .json({ ok: false, error: "Missing 'prompt' in request body." });
   }
 
+  // ---------- Gemini Provider ----------
   if (process.env.GEMINI_API_KEY) {
     const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
     const baseUrl =
@@ -145,6 +152,7 @@ app.post("/api/chat", async (req, res) => {
     }
   }
 
+  // ---------- OpenAI Provider ----------
   if (process.env.OPENAI_API_KEY) {
     try {
       const model = process.env.OPENAI_MODEL || "gpt-3.5-turbo";
