@@ -5,7 +5,7 @@
 import { startListening, stopListening } from "./speech.js";
 import { avatarStartTalking, avatarStopTalking } from "./threejs-avatar.js";
 
-const API_URL = "/api/generate"; 
+const API_URL = "/api/generate";  // Use relative path
 
 
 // UI ELEMENTS
