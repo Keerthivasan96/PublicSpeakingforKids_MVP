@@ -5,7 +5,7 @@
 import { startListening, stopListening } from "./speech.js";
 import { avatarStartTalking, avatarStopTalking } from "./threejs-avatar.js";
 
-const API_URL = "/api/generate"; // <- updated to call serverless proxy on Vercel
+const API_URL = "https://public-speaking-backend.vercel.app/api/generate";
 
 // UI ELEMENTS
 const micBtn = document.getElementById("micBtn");
