@@ -241,9 +241,5 @@ app.post("/api/tts", async (req, res) => {
 // ✅ Static audio files (if needed)
 app.use("/audio", express.static(path.join(process.cwd(), "audio")));
 
-// ✅ Start Server
-app.listen(PORT, () => {
-  console.log(`🚀 Backend running on http://localhost:${PORT}`);
-});
-
+// Keep this for Vercel:
 export default app;
